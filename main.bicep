@@ -36,8 +36,19 @@ param SCOMserverName string = 'SCOM01'
 @allowed([
   'Standard_DS1_v2'
   'Standard_D2s_v3'
+  'Standard_B2ms'
+  'Standard_B4ms'
 ])
-param virtualMachineSize string = 'Standard_DS1_v2'
+param virtualMachineSize string = 'Standard_B2ms'
+
+@description('Size for both the SQL server and SCOM Server virtual machines.')
+@allowed([
+  'Standard_DS1_v2'
+  'Standard_D2s_v3'
+  'Standard_B2ms'
+  'Standard_B4ms'
+])
+param virtualMachineSizeSrv string = 'Standard_B4ms'
 
 // Domain parameters
 @description('FQDN for the Active Directory domain (e.g. contoso.com).')
@@ -176,13 +187,13 @@ module SQLserver 'modules/SQL.bicep' = {
                 }
             }
         ]
-    virtualMachineSize: 'Standard_B2ms'
+    virtualMachineSize: virtualMachineSizeSrv
     nicDeleteOption: 'Delete'
     adminUsername: adminUsername
     adminPassword: adminPassword
     patchMode: 'AutomaticByOS'
     enableHotpatching: false
-    sqlVirtualMachineLocation: 'westeurope'
+    sqlVirtualMachineLocation: location
     sqlvmName: SQLserverName
     sqlConnectivityType: 'Private'
     sqlPortNumber: 1433
@@ -257,7 +268,7 @@ module SCOMserver 'modules/vm.bicep' = {
     location: location
     subnetId: virtualNetwork.outputs.subnetId
     vmName: SCOMserverName
-    vmSize: virtualMachineSize
+    vmSize: virtualMachineSizeSrv
     vmPublisher: 'MicrosoftWindowsServer'
     vmOffer: 'WindowsServer'
     vmSku: '2019-Datacenter'
@@ -300,9 +311,11 @@ resource SCOMserverConfiguration 'Microsoft.Compute/virtualMachines/extensions@2
   }
 }
 
-// Create GMSA Account
+// Create GMSA Account On DC
+
 
 // Install SCOM
+
 
 
 // Deploy the workstation once the virtual network's primary DNS server has been updated to the domain controller
